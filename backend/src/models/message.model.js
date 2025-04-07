@@ -17,7 +17,11 @@ const messageSchema = new mongoose.Schema(
         },
         image:{
             type:String
-        }
+        },
+        seen: {
+            type: Boolean,
+            default: false, // 👈 default to false when message is sent
+          },
     },
     {timestamps:true}
 

@@ -12,7 +12,7 @@ const ChatContainer = () => {
         getMessages,
         isMessagesLoading,
         selectedUser,
-        subscribeToMessages,unsubscribeToMessages
+        subscribeToMessages,unsubscribeToMessages,subscribeToTyping,subscribeToSeenStatus
       } = useChatStore();
       const{authUser} = useAuthStore();
 
@@ -21,7 +21,8 @@ const ChatContainer = () => {
       useEffect(()=>{
           getMessages(selectedUser._id)
           subscribeToMessages();
-
+          subscribeToTyping();
+          subscribeToSeenStatus();
           return ()=> unsubscribeToMessages()
 
       },[selectedUser._id,getMessages,subscribeToMessages,unsubscribeToMessages])
@@ -39,17 +40,24 @@ const ChatContainer = () => {
             <MessageInput/>
         </div>
       )
- console.log(messages)
+ 
   return (
     <div className='flex flex-1 flex-col overflow-auto'>
         <ChatHeader/>
         <div className='flex-1 overflow-y-auto p-4 space-y-4'>
-          {messages.map((message)=>(
-            
-            <div 
+          {messages.map((message,index)=>{
+            const isMyMessage = message.senderId === authUser._id;
+
+// Check if it's the last message sent by me
+          const isLastMessageByMe = isMyMessage && (
+            index === messages.length - 1 ||
+            !messages.slice(index + 1).some((m) => m.senderId === authUser._id)
+          )
+            return (
+              <div 
              key={message._id}
-             className={`chat ${message.senderId === authUser._id ? "chat-end":"chat-start"}`}
-             ref={messageEndRef}
+             className={`chat ${isMyMessage? "chat-end":"chat-start"}`}
+             ref={index === messages.length - 1 ? messageEndRef : null}
             >
               <div className='chat-image avatar'>
                 <div className='size-10 rounded-full border'>
@@ -74,9 +82,15 @@ const ChatContainer = () => {
                 />
               )}
               {message.text && <p>{message.text}</p>}
+
+              {/* ✅ Show "Seen" only if it's the last message sent by me and it was seen */}
+        {isLastMessageByMe && message.seen && (
+          <span className="text-[10px] text-gray-500 mt-1 self-end">Seen</span>
+        )}
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
         <MessageInput/>
     </div>
